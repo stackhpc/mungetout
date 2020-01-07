@@ -11,7 +11,7 @@ import logging
 import json
 import sys
 
-from cardiffmunger import __version__
+from mungetout import __version__
 
 __author__ = "Will Szumski"
 __copyright__ = "Will Szumski"
@@ -96,7 +96,7 @@ def parse_args(args):
     parser.add_argument(
         '--version',
         action='version',
-        version='cardiffmunger {ver}'.format(ver=__version__))
+        version='mungetout {ver}'.format(ver=__version__))
     parser.add_argument(
         '-v',
         '--verbose',

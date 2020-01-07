@@ -1,8 +1,8 @@
 =============
-cardiffmunger
+mungetout
 =============
 
-This is the documentation of **cardiffmunger**.
+This is the documentation of **mungetout**.
 
 .. note::
 

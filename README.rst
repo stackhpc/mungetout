@@ -1,9 +1,10 @@
 =============
-cardiffmunger
+mungetout
 =============
 
 
-Convert from Ironic Inspector introspection format to cardiff format
+Convert from Ironic Inspector introspection format to cardiff format. Now
+you can mungetout...
 
 
 Usage
@@ -14,7 +15,7 @@ package to be installed.
 
 .. code-block::
 
-  pip install git+https://github.com/stackhpc/cardiffmunger
+  pip install git+https://github.com/stackhpc/mungetout
   mkdir working-dir && cd working-dir
   cardiff-gen
   hardware-cardiff -I ipmi -p 'results/extra_hardware_kef1i-a00*'
