@@ -156,7 +156,7 @@ def main(args):
                                 'extra_hardware_{}'.format(node_name))
         os.symlink(os.path.join('..', extra_path), alt_path)
 
-    _logger.info("Processed {} nodes".format(i+1))
+    _logger.info("Processed {} nodes".format(i))
     _logger.info("Skipped {} nodes".format(skipped))
 
 
