@@ -2,6 +2,8 @@
 mungetout
 =============
 
+.. image:: https://travis-ci.com/stackhpc/mungetout.svg?branch=master
+    :target: https://travis-ci.com/stackhpc/mungetout
 
 Convert from Ironic Inspector introspection format to cardiff format. Now
 you can mungetout...
