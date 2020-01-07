@@ -9,13 +9,21 @@ Convert from Ironic Inspector introspection format to cardiff format
 Usage
 =====
 
+Requires the python `hardware <https://pypi.org/project/hardware/>`_
+package to be installed.
+
 .. code-block::
 
+  pip install git+https://github.com/stackhpc/cardiffmunger
+  mkdir working-dir && cd working-dir
   cardiff-gen
   hardware-cardiff -I ipmi -p 'results/extra_hardware_kef1i-a00*'
 
-Requires the python `hardware <https://pypi.org/project/hardware/>`_ 
-package to be installed.
+It can be useful to limit the number of nodes for debugging purposes:
+
+.. code-block::
+
+  cardiff-gen --limit 4 -vv
 
 Note
 ====
