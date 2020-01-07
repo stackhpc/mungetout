@@ -122,6 +122,7 @@ def main(args):
     if args.limit:
         _logger.info("Using limit: {}".format(args.limit))
     skipped = 0
+    i = 0
     nodes = _get_nodes()
     os.mkdir("results")
     for i, node in enumerate(nodes):
