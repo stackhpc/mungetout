@@ -49,6 +49,14 @@ def parse_args(args):
         nargs='?',
         default="http://localhost:8080/ironic-inspector/")
     parser.add_argument(
+        '--limit',
+        dest='limit',
+        metavar="MAX",
+        nargs='?',
+        type=int,
+        help="Limit the number of nodes processed",
+        default=None)
+    parser.add_argument(
         '-v',
         '--verbose',
         dest="loglevel",
@@ -111,15 +119,22 @@ def main(args):
     """
     args = parse_args(args)
     setup_logging(args.loglevel)
+    if args.limit:
+        _logger.info("Using limit: {}".format(args.limit))
+    skipped = 0
     nodes = _get_nodes()
     os.mkdir("results")
-    for node in nodes:
+    for i, node in enumerate(nodes):
+        if args.limit and i - skipped >= args.limit:
+            skipped += len(nodes) - i
+            break
         node_name = node["Name"]
         node_uuid = node["UUID"]
 
         if not node_name:
             _logger.warning("Node with uuid: {}, has no name. Skipping..."
                             .format(node_uuid))
+            skipped += 1
             continue
         os.mkdir(node_name)
 
@@ -140,6 +155,9 @@ def main(args):
         alt_path = os.path.join('results',
                                 'extra_hardware_{}'.format(node_name))
         os.symlink(os.path.join('..', extra_path), alt_path)
+
+    _logger.info("Processed {} nodes".format(i+1))
+    _logger.info("Skipped {} nodes".format(skipped))
 
 
 def run():
