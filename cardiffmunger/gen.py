@@ -131,7 +131,7 @@ def main(args):
         with open(extra_path, 'w') as f:
             process = Popen(['cardiff-convert'], stdout=f, stdin=PIPE,
                             stderr=PIPE)
-            process.communicate(input=extra_data)
+            process.communicate(input=json.dumps(extra_data))
         alt_path = os.path.join('results',
                                 'extra_hardware_{}'.format(node_name))
         os.symlink(os.path.join('..', extra_path), alt_path)
