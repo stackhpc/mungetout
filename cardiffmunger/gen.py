@@ -47,7 +47,8 @@ def parse_args(args):
         dest='inspection_store',
         metavar="URL",
         nargs='?',
-        default="http://localhost:8080/ironic-inspector/")
+        default="http://localhost:8080/ironic-inspector",
+        help="URL to download extra hardware data from")
     parser.add_argument(
         '--limit',
         dest='limit',
@@ -100,9 +101,8 @@ def _get_introspection_data(uuid):
     return json.loads(output)
 
 
-def _get_extra_hardware_data(uuid):
-    url = "http://localhost:8080/ironic-inspector/extra_hardware-{node_uuid}"\
-        .format(node_uuid=uuid)
+def _get_extra_hardware_data(uuid, url):
+    url = "{url}/extra_hardware-{node_uuid}".format(node_uuid=uuid, url=url)
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -147,7 +147,8 @@ def main(args):
                                 'introspection_data_{}'.format(node_name))
         os.symlink(os.path.join('..', introspection_path), alt_path)
 
-        extra_data = _get_extra_hardware_data(node_uuid)
+        extra_data = _get_extra_hardware_data(node_uuid,
+                                              url=args.inspection_store)
         extra_path = os.path.join(node_name, 'extra_hardware')
         with open(extra_path, 'w') as f:
             process = Popen(['cardiff-convert'], stdout=f, stdin=PIPE,
