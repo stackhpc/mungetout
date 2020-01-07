@@ -35,8 +35,8 @@ def parse_args(args):
       :obj:`argparse.Namespace`: command line parameters namespace
     """
     parser = argparse.ArgumentParser(
-        description="Generates extra hardware data in format"
-                    "suitable for cardiff ingest from OpenStack"
+        description="Generates extra hardware data in format "
+                    "suitable for cardiff ingest from OpenStack "
                     "Ironic inspector")
     parser.add_argument(
         '--version',
