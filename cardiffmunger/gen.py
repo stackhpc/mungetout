@@ -124,7 +124,7 @@ def main(args):
             json.dump(introspection_data, f, indent=4, sort_keys=True)
         alt_path = os.path.join('results',
                                 'introspection_data_{}'.format(node_name))
-        os.symlink(introspection_path, alt_path)
+        os.symlink(os.path.join('..', introspection_path), alt_path)
 
         extra_data = _get_extra_hardware_data(node_uuid)
         extra_path = os.path.join(node_name, 'extra_hardware')
@@ -134,7 +134,7 @@ def main(args):
             process.communicate(input=extra_data)
         alt_path = os.path.join('results',
                                 'extra_hardware_{}'.format(node_name))
-        os.symlink(introspection_path, alt_path)
+        os.symlink(os.path.join('..', extra_path), alt_path)
 
 
 def run():
