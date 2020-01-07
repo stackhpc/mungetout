@@ -116,6 +116,11 @@ def main(args):
     for node in nodes:
         node_name = node["Name"]
         node_uuid = node["UUID"]
+
+        if not node_name:
+            _logger.warning("Node with uuid: {}, has no name. Skipping..."
+                            .format(node_uuid))
+            continue
         os.mkdir(node_name)
 
         introspection_data = _get_introspection_data(node_uuid)
