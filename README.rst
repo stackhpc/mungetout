@@ -3,14 +3,19 @@ cardiffmunger
 =============
 
 
-Add a short description here!
+Convert from Ironic Inspector introspection format to cardiff format
 
 
-Description
-===========
+Usage
+=====
 
-A longer description of your project goes here...
+.. code-block::
 
+  cardiff-gen
+  hardware-cardiff -I ipmi -p 'results/extra_hardware_kef1i-a00*'
+
+Requires the python `hardware <https://pypi.org/project/hardware/>`_ 
+package to be installed.
 
 Note
 ====
