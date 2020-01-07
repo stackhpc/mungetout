@@ -4,4 +4,5 @@
 python-openstackclient
 python-ironicclient
 requests
+python-ironic-inspector-client
 
