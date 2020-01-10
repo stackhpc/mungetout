@@ -72,23 +72,36 @@ def _clean_kernel_cmdline(item):
     return cleaned
 
 
-def _clean_disk(item):
+def _clean_disk_temp(item):
     # Strip out temperatures e.g from ssacli for HP servers:
     # (u'disk', u'1I:1:2', u'maximum_temperature_c', u'27'),
     # (u'disk', u'1I:1:2', u'current_temperature_c', u'18'),
     if len(item) < 4 or item[0] != "disk" or "temperature" not in item[2]:
         return item
-    logging.debug("_clean_disk, removing: {}".format(item))
+    logging.debug("_clean_disk_temp, removing: {}".format(item))
+    return None
+
+
+def _clean_disk_serial(item):
+    # Strip out serial numbers e.g from ssacli for HP servers:
+    #  (u'disk', u'1I:1:2', u'wwid', u'1234567'),
+    if len(item) < 4 or item[0] != "disk" or item[2] != "wwid":
+        return item
+    logging.debug("_clean_disk_serial, removing: {}".format(item))
     return None
 
 
 def _modify(item):
     steps = [
         _clean_kernel_cmdline,
-        _clean_disk
+        _clean_disk_temp,
+        _clean_disk_serial
     ]
     for step in steps:
         item = step(item)
+        # A step may return None to remove the value
+        if not item:
+            break
     return item
 
 
