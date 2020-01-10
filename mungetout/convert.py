@@ -72,13 +72,14 @@ def _clean_kernel_cmdline(item):
     return cleaned
 
 
-def _clean_disk_temp(item):
+def _clean_temperatures(item):
     # Strip out temperatures e.g from ssacli for HP servers:
     # (u'disk', u'1I:1:2', u'maximum_temperature_c', u'27'),
     # (u'disk', u'1I:1:2', u'current_temperature_c', u'18'),
-    if len(item) < 4 or item[0] != "disk" or "temperature" not in item[2]:
+    # (u'hpa', u'slot_0', u'capacitor_temperature_c', u'12'),
+    if len(item) < 4 or "temperature" not in item[2]:
         return item
-    logging.debug("_clean_disk_temp, removing: {}".format(item))
+    logging.debug("_clean_temperatures, removing: {}".format(item))
     return None
 
 
@@ -94,7 +95,7 @@ def _clean_disk_serial(item):
 def _modify(item):
     steps = [
         _clean_kernel_cmdline,
-        _clean_disk_temp,
+        _clean_temperatures,
         _clean_disk_serial
     ]
     for step in steps:
