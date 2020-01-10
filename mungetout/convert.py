@@ -20,6 +20,15 @@ __license__ = "apache"
 _logger = logging.getLogger(__name__)
 
 
+_field_blacklist = [
+    # (u'hpa', u'slot_0', u'total_cache_memory_available', u'0.3')
+    'total_cache_memory_available',
+    # Strip out serial numbers e.g from ssacli for HP servers:
+    #  (u'disk', u'1I:1:2', u'wwid', u'1234567'),
+    'wwid'
+]
+
+
 def _parse_cmdline_param(p):
     # given ipa-collect-lldp=1, produce: ('ipa-collect-lldp', '1')
     # given nofb, produce: ('nofb', None)
@@ -83,12 +92,10 @@ def _clean_temperatures(item):
     return None
 
 
-def _clean_disk_serial(item):
-    # Strip out serial numbers e.g from ssacli for HP servers:
-    #  (u'disk', u'1I:1:2', u'wwid', u'1234567'),
-    if len(item) < 4 or item[0] != "disk" or item[2] != "wwid":
+def _clean_generic_field(item):
+    if len(item) < 4 or item[2] not in _field_blacklist:
         return item
-    logging.debug("_clean_disk_serial, removing: {}".format(item))
+    logging.debug("_clean_generic field removing: {}".format(item))
     return None
 
 
@@ -96,7 +103,7 @@ def _modify(item):
     steps = [
         _clean_kernel_cmdline,
         _clean_temperatures,
-        _clean_disk_serial
+        _clean_generic_field
     ]
     for step in steps:
         item = step(item)
