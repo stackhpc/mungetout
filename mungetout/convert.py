@@ -72,9 +72,20 @@ def _clean_kernel_cmdline(item):
     return cleaned
 
 
+def _clean_disk(item):
+    # Strip out temperatures e.g from ssacli for HP servers:
+    # (u'disk', u'1I:1:2', u'maximum_temperature_c', u'27'),
+    # (u'disk', u'1I:1:2', u'current_temperature_c', u'18'),
+    if len(item) < 4 or item[0] != "disk" or "temperature" not in item[2]:
+        return item
+    logging.debug("_clean_disk, removing: {}".format(item))
+    return None
+
+
 def _modify(item):
     steps = [
         _clean_kernel_cmdline,
+        _clean_disk
     ]
     for step in steps:
         item = step(item)
@@ -134,8 +145,9 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     data = json.load(sys.stdin)
-    tuples = [_modify(tuple(xs)) for xs in data]
-    print(tuples)
+    # modify then strip falsy values
+    tuples = filter(lambda x: x, [_modify(tuple(xs)) for xs in data])
+    print(list(tuples))
 
 
 def run():
