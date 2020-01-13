@@ -10,6 +10,7 @@ import argparse
 import logging
 import json
 import sys
+import re
 
 from mungetout import __version__
 
@@ -90,6 +91,21 @@ def _clean_temperatures(item):
         return item
     logging.debug("_clean_temperatures, removing: {}".format(item))
     return None
+
+
+def _clean_boot_volume(item):
+    # (u'hpa',
+    #  u'slot_0',
+    #  u'secondary_boot_volume',
+    #  u'logicaldrive 1 (600508B1001C6D568C431707B847FA3A)'),
+    if len(item) < 4 or item[2] not in \
+            ["primary_boot_volume", "secondary_boot_volume"]:
+        return item
+    # Only keep "logicaldrive NUM" component
+    match = re.search("^(logicaldrive [0-9]+) \(.*?\)", item[3])
+    if not match:
+        return item
+    return item[0], item[1], item[2], match.group(1)
 
 
 def _clean_generic_field(item):
