@@ -294,7 +294,7 @@ def main(args):
     if args.output_format == "eval":
         print(result)
     else:
-        json.dump(result, sys.stdout)
+        json.dump(result, sys.stdout, indent=4, separators=(',', ': '))
 
 
 def run():
