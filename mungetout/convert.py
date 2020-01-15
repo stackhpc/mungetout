@@ -27,6 +27,18 @@ _field_blacklist = [
     # Strip out serial numbers e.g from ssacli for HP servers:
     #  (u'disk', u'1I:1:2', u'wwid', u'1234567'),
     'wwid'
+    # ['hpa', 'slot_0', 'serial_number', '1234']
+    'serial_number',
+    # ['hpa', 'slot_0', 'host_serial_number', '1234']
+    'host_serial_number'
+    # ["disk", "sda", "wwn-id", "wwn-0xdeadbeef"]
+    'wwn-id',
+    # ["disk", "sda", "scsi-id", "scsi-1234"]
+    'scsi-id',
+    # ["system", "product", "serial", "CZHITHERE"]
+    'serial',
+    # ["system", "product", "uuid", "e21c3ea6-4215-40e6-99db-cf48569f1e59"]
+    'uuid',
 ]
 
 
