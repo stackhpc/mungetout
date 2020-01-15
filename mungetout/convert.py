@@ -108,7 +108,7 @@ def _clean_kernel_cmdline(item):
     return cleaned
 
 
-def _clean_network(item):
+def _filter_network(item):
     if len(item) < 4:
         return item
     elif item[0] != "network":
@@ -120,17 +120,17 @@ def _clean_network(item):
     field = item[2]
     if field not in ["ipv4"]:
         return item
-    logging.debug("_clean_network removing: {}".format(item))
+    logging.debug("_filter_network removing: {}".format(item))
 
 
-def _clean_temperatures(item):
+def _filter_temperatures(item):
     # Strip out temperatures e.g from ssacli for HP servers:
     # (u'disk', u'1I:1:2', u'maximum_temperature_c', u'27'),
     # (u'disk', u'1I:1:2', u'current_temperature_c', u'18'),
     # (u'hpa', u'slot_0', u'capacitor_temperature_c', u'12'),
     if len(item) < 4 or "temperature" not in item[2]:
         return item
-    logging.debug("_clean_temperatures, removing: {}".format(item))
+    logging.debug("_filter_temperatures, removing: {}".format(item))
     return None
 
 
@@ -150,7 +150,7 @@ def _clean_boot_volume(item):
     return item[0], item[1], item[2], match.group(1)
 
 
-def _clean_ipmi_sensor_data(item):
+def _filter_ipmi_sensor_data(item):
     # This removes voltages, fan speeds, temperatures, power consumption e.g:
     # ["ipmi", "Power Meter", "value", "84"]
     if len(item) < 4:
@@ -159,20 +159,20 @@ def _clean_ipmi_sensor_data(item):
         return item
     elif item[2] != "value":
         return item
-    logging.debug("_clean_ipmi_sensor_data removing: {}".format(item))
+    logging.debug("_filter_ipmi_sensor_data removing: {}".format(item))
 
 
-def _clean_generic_field(item):
+def _filter_generic_field(item):
     if len(item) < 4 or item[2] not in _field_blacklist:
         return item
-    logging.debug("_clean_generic_field removing: {}".format(item))
+    logging.debug("_filter_generic_field removing: {}".format(item))
     return None
 
 
-def _clean_benchmarks(item):
+def _filter_benchmarks(item):
     if len(item) < 4 or not _benchmark_regex.match(item[2]):
         return item
-    logging.debug("_clean_benchmarks removing: {}".format(item))
+    logging.debug("_filter_benchmarks removing: {}".format(item))
     return None
 
 
@@ -238,14 +238,14 @@ def clean(extrahw, filter_benchmarks=False):
     def _modify(item):
         steps = [
             _clean_kernel_cmdline,
-            _clean_temperatures,
+            _filter_temperatures,
             _clean_boot_volume,
-            _clean_network,
-            _clean_ipmi_sensor_data,
-            _clean_generic_field
+            _filter_network,
+            _filter_ipmi_sensor_data,
+            _filter_generic_field
         ]
         if filter_benchmarks:
-            steps.append(_clean_benchmarks)
+            steps.append(_filter_benchmarks)
         for step in steps:
             item = step(item)
             # A step may return None to remove the value
