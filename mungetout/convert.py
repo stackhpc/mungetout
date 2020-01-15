@@ -10,6 +10,7 @@ import argparse
 import logging
 import json
 import sys
+import re
 
 from mungetout import __version__
 
@@ -18,6 +19,15 @@ __copyright__ = "Will Szumski"
 __license__ = "apache"
 
 _logger = logging.getLogger(__name__)
+
+
+_field_blacklist = [
+    # (u'hpa', u'slot_0', u'total_cache_memory_available', u'0.3')
+    'total_cache_memory_available',
+    # Strip out serial numbers e.g from ssacli for HP servers:
+    #  (u'disk', u'1I:1:2', u'wwid', u'1234567'),
+    'wwid'
+]
 
 
 def _parse_cmdline_param(p):
@@ -72,12 +82,51 @@ def _clean_kernel_cmdline(item):
     return cleaned
 
 
+def _clean_temperatures(item):
+    # Strip out temperatures e.g from ssacli for HP servers:
+    # (u'disk', u'1I:1:2', u'maximum_temperature_c', u'27'),
+    # (u'disk', u'1I:1:2', u'current_temperature_c', u'18'),
+    # (u'hpa', u'slot_0', u'capacitor_temperature_c', u'12'),
+    if len(item) < 4 or "temperature" not in item[2]:
+        return item
+    logging.debug("_clean_temperatures, removing: {}".format(item))
+    return None
+
+
+def _clean_boot_volume(item):
+    # (u'hpa',
+    #  u'slot_0',
+    #  u'secondary_boot_volume',
+    #  u'logicaldrive 1 (600508B1001C6D568C431707B847FA3A)'),
+    if len(item) < 4 or item[2] not in \
+            ["primary_boot_volume", "secondary_boot_volume"]:
+        return item
+    # Only keep "logicaldrive NUM" component
+    match = re.search(r"^(logicaldrive [0-9]+) \(.*?\)", item[3])
+    if not match:
+        return item
+    return item[0], item[1], item[2], match.group(1)
+
+
+def _clean_generic_field(item):
+    if len(item) < 4 or item[2] not in _field_blacklist:
+        return item
+    logging.debug("_clean_generic field removing: {}".format(item))
+    return None
+
+
 def _modify(item):
     steps = [
         _clean_kernel_cmdline,
+        _clean_temperatures,
+        _clean_boot_volume,
+        _clean_generic_field
     ]
     for step in steps:
         item = step(item)
+        # A step may return None to remove the value
+        if not item:
+            break
     return item
 
 
@@ -134,8 +183,9 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     data = json.load(sys.stdin)
-    tuples = [_modify(tuple(xs)) for xs in data]
-    print(tuples)
+    # modify then strip falsy values
+    tuples = filter(lambda x: x, [_modify(tuple(xs)) for xs in data])
+    print(list(tuples))
 
 
 def run():
