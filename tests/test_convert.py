@@ -2,6 +2,7 @@ import unittest
 
 from mungetout.convert import _clean_boot_volume # noqa
 from mungetout.convert import _clean_benchmarks # noqa
+from mungetout.convert import _clean_generic_field # noqa
 
 
 class FilterTests(unittest.TestCase):
@@ -38,6 +39,11 @@ class FilterTests(unittest.TestCase):
         expected = ['cpu', 'logical_0', 'should not match', '0']
         result = _clean_benchmarks(item)
         self.assertEqual(expected, result)
+
+    def test_clean_generic_serial_number(self):
+        item = ["hpa", "slot_0", "serial_number", "1234"]
+        result = _clean_generic_field(item)
+        self.assertEqual(result, None)
 
 
 if __name__ == '__main__':
