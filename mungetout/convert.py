@@ -209,6 +209,14 @@ def parse_args(args):
         default=False,
         action='store_true',
         help='Strip benchmarks from extra data')
+    parser.add_argument(
+        '--output-format',
+        dest="output_format",
+        choices=['json', 'eval'],
+        nargs="?",
+        default="json",
+        help='Format to print the data as. eval will print a python evaluable '
+             'string')
     return parser.parse_args(args)
 
 
@@ -255,7 +263,11 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     data = json.load(sys.stdin)
-    print(clean(data, clean_benchmarks=args.clean_benchmarks))
+    result = clean(data, clean_benchmarks=args.clean_benchmarks)
+    if args.output_format == "eval":
+        print(result)
+    else:
+        json.dump(result, sys.stdout)
 
 
 def run():

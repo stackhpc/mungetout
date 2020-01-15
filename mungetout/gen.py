@@ -151,7 +151,8 @@ def main(args):
                                               url=args.inspection_store)
         extra_path = os.path.join(node_name, 'extra_hardware')
         with open(extra_path, 'w') as f:
-            process = Popen(['cardiff-convert'], stdout=f, stdin=PIPE,
+            cmd = 'cardiff-convert --output-format eval'
+            process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
                             stderr=PIPE)
             process.communicate(input=json.dumps(extra_data))
         alt_path = os.path.join('results',
