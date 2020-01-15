@@ -119,6 +119,7 @@ def _modify(item):
     steps = [
         _clean_kernel_cmdline,
         _clean_temperatures,
+        _clean_boot_volume,
         _clean_generic_field
     ]
     for step in steps:
