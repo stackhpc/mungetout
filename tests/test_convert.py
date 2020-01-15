@@ -1,5 +1,7 @@
 import unittest
-from mungetout.convert import _clean_boot_volume  # noqa
+
+from mungetout.convert import _clean_boot_volume # noqa
+from mungetout.convert import _clean_benchmarks # noqa
 
 
 class FilterTests(unittest.TestCase):
@@ -14,6 +16,28 @@ class FilterTests(unittest.TestCase):
                     u'logicaldrive 1')
         result = _clean_boot_volume(item)
         self.assertEqual(result, expected)
+
+    def test_clean_benchmarks_bogomips(self):
+        item = ["cpu", "logical_0", "bogomips", "5399.97"]
+        result = _clean_benchmarks(item)
+        self.assertEqual(None, result)
+
+    def test_clean_benchmarks_bandwidth(self):
+        item = ["cpu", "logical_0", "bandwidth_4K", "9934"]
+        result = _clean_benchmarks(item)
+        self.assertEqual(None, result)
+
+    def test_clean_benchmarks_threaded_bandwith(self):
+        item = ["cpu", "logical", "threaded_bandwidth_16M", "91774"]
+        result = _clean_benchmarks(item)
+        self.assertEqual(None, result)
+
+    def test_clean_benchmarks_negative(self):
+        # Items not matching benchmark should be passed through
+        item = ["cpu", "logical_0", "should not match", "0"]
+        expected = ['cpu', 'logical_0', 'should not match', '0']
+        result = _clean_benchmarks(item)
+        self.assertEqual(expected, result)
 
 
 if __name__ == '__main__':

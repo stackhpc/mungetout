@@ -45,6 +45,16 @@ _field_blacklist = [
     'mac-address'
 ]
 
+_benchmark_regexps = [
+    # Match threaded_bandwidth_2G, bandwidth_2G
+    "^.*bandwidth_.*$",
+    "^loops_per_sec$",
+    "^bogomips$"
+]
+
+_benchmark_regex_fmt = "|".join(["(%s)" for _ in _benchmark_regexps])
+_benchmark_regex = re.compile(_benchmark_regex_fmt % tuple(_benchmark_regexps))
+
 
 def _parse_cmdline_param(p):
     # given ipa-collect-lldp=1, produce: ('ipa-collect-lldp', '1')
@@ -157,20 +167,10 @@ def _clean_generic_field(item):
     return None
 
 
-def _modify(item):
-    steps = [
-        _clean_kernel_cmdline,
-        _clean_temperatures,
-        _clean_boot_volume,
-        _clean_network,
-        _clean_generic_field
-    ]
-    for step in steps:
-        item = step(item)
-        # A step may return None to remove the value
-        if not item:
-            break
-    return item
+def _clean_benchmarks(item):
+    if len(item) < 4 or not _benchmark_regex.match(item[2]):
+        return item
+    return None
 
 
 def parse_args(args):
@@ -203,6 +203,12 @@ def parse_args(args):
         help="set loglevel to DEBUG",
         action='store_const',
         const=logging.DEBUG)
+    parser.add_argument(
+        '--clean-benchmarks',
+        dest="clean_benchmarks",
+        default=False,
+        action='store_true',
+        help='Strip benchmarks from extra data')
     return parser.parse_args(args)
 
 
@@ -217,7 +223,24 @@ def setup_logging(loglevel):
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
-def clean(extrahw):
+def clean(extrahw, clean_benchmarks=False):
+    def _modify(item):
+        steps = [
+            _clean_kernel_cmdline,
+            _clean_temperatures,
+            _clean_boot_volume,
+            _clean_network,
+            _clean_ipmi_sensor_data,
+            _clean_generic_field
+        ]
+        if clean_benchmarks:
+            steps += _clean_benchmarks
+        for step in steps:
+            item = step(item)
+            # A step may return None to remove the value
+            if not item:
+                break
+        return item
     # modify then strip falsy values, operates on python data structure
     tuples = filter(lambda x: x, [_modify(tuple(xs)) for xs in extrahw])
     return list(tuples)
@@ -232,7 +255,7 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     data = json.load(sys.stdin)
-    print(clean(data))
+    print(clean(data, clean_benchmarks=args.clean_benchmarks))
 
 
 def run():
