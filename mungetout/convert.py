@@ -165,7 +165,7 @@ def _clean_ipmi_sensor_data(item):
 def _clean_generic_field(item):
     if len(item) < 4 or item[2] not in _field_blacklist:
         return item
-    logging.debug("_clean_generic field removing: {}".format(item))
+    logging.debug("_clean_generic_field removing: {}".format(item))
     return None
 
 
