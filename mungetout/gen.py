@@ -12,6 +12,7 @@ import json
 import subprocess
 import sys
 import os
+import re
 import requests
 import shlex
 from subprocess import Popen, PIPE
@@ -49,6 +50,13 @@ def parse_args(args):
         nargs='?',
         default="http://localhost:8080/ironic-inspector",
         help="URL to download extra hardware data from")
+    parser.add_argument(
+        '--regex',
+        dest='regex',
+        metavar="REGEX",
+        nargs='?',
+        default="",
+        help="Select nodes using a regex")
     parser.add_argument(
         '--limit',
         dest='limit',
@@ -137,6 +145,13 @@ def main(args):
                             .format(node_uuid))
             skipped += 1
             continue
+
+        if args.regex and not re.search(args.regex, node_name):
+            _logger.debug("Node with name: {} doesn't match regex"
+                          .format(node_name))
+            skipped += 1
+            continue
+
         os.mkdir(node_name)
 
         introspection_data = _get_introspection_data(node_uuid)
