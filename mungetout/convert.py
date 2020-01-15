@@ -107,7 +107,7 @@ def _clean_kernel_cmdline(item):
     _use_placeholder(cmdline, "ip")
     cleaned = _dict2cmdline(cmdline)
     logging.debug("After _clean_kernel_cmdline: {}".format(cleaned))
-    return cleaned
+    return item[0], item[1], item[2], cleaned
 
 
 def _filter_network(item):
