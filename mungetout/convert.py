@@ -174,6 +174,12 @@ def setup_logging(loglevel):
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
+def clean(extrahw):
+    # modify then strip falsy values, operates on python data structure
+    tuples = filter(lambda x: x, [_modify(tuple(xs)) for xs in extrahw])
+    return list(tuples)
+
+
 def main(args):
     """Main entry point allowing external calls
 
@@ -183,9 +189,7 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     data = json.load(sys.stdin)
-    # modify then strip falsy values
-    tuples = filter(lambda x: x, [_modify(tuple(xs)) for xs in data])
-    print(list(tuples))
+    print(clean(data))
 
 
 def run():
