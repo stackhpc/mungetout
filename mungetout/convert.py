@@ -118,9 +118,9 @@ def _clean_network(item):
     # Assume common network, otherwise also need to filter ipv4-netmask,
     # ipv4-cidr etc.
     field = item[2]
-    if field in ["ipv4"]:
-        return None
-    return item
+    if field not in ["ipv4"]:
+        return item
+    logging.debug("_clean_network removing: {}".format(item))
 
 
 def _clean_temperatures(item):
@@ -146,6 +146,7 @@ def _clean_boot_volume(item):
     match = re.search(r"^(logicaldrive [0-9]+) \(.*?\)", item[3])
     if not match:
         return item
+    logging.debug("_clean_boot_volume cleaning: {}".format(item))
     return item[0], item[1], item[2], match.group(1)
 
 
@@ -158,6 +159,7 @@ def _clean_ipmi_sensor_data(item):
         return item
     elif item[2] != "value":
         return item
+    logging.debug("_clean_ipmi_sensor_data removing: {}".format(item))
 
 
 def _clean_generic_field(item):
@@ -170,6 +172,7 @@ def _clean_generic_field(item):
 def _clean_benchmarks(item):
     if len(item) < 4 or not _benchmark_regex.match(item[2]):
         return item
+    logging.debug("_clean_benchmarks removing: {}".format(item))
     return None
 
 
