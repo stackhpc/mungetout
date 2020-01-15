@@ -178,6 +178,26 @@ def _filter_benchmarks(item):
     return None
 
 
+def _filter_memory(item):
+    # If the memory is placed in different memory banks, but the same amount
+    # of memory exists for each CPU this can cause grouping to fail.
+    # E.g:
+    # ["memory", "bank:10", "description",
+    #  "DIMM DDR3 Synchronous Registered (Buffered) 1600 MHz (0.6 ns)"]
+    # You could probably do some sort of fuzzy match, but for now keep it
+    # simple and remove the values
+    if len(item) < 4 or item[0] != "memory" or "bank" not in item[1]:
+        return item
+    logging.debug("_filter_memory removing: {}".format(item))
+
+
+def _filter_memory_ipmi(item):
+    # Needs filtering if memory in different banks, see _filter_memory
+    if len(item) < 4 or item[0] != "ipmi" or "dimm" not in item[1].lower():
+        return item
+    logging.debug("_filter_memory removing: {}".format(item))
+
+
 def parse_args(args):
     """Parse command line parameters
 
@@ -242,9 +262,11 @@ def clean(extrahw, filter_benchmarks=False):
             _clean_kernel_cmdline,
             _filter_temperatures,
             _clean_boot_volume,
+            _filter_memory,
+            _filter_memory_ipmi,
             _filter_network,
             _filter_ipmi_sensor_data,
-            _filter_generic_field
+            _filter_generic_field,
         ]
         if filter_benchmarks:
             steps.append(_filter_benchmarks)
