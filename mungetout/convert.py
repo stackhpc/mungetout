@@ -39,6 +39,10 @@ _field_blacklist = [
     'serial',
     # ["system", "product", "uuid", "e21c3ea6-4215-40e6-99db-cf48569f1e59"]
     'uuid',
+    # ["ipmi", "lan", "ip-address", "10.64.3.2"]
+    'ip-address'
+    # ["ipmi", "lan", "mac-address", "80:c1:6e:77:71:8c"]
+    'mac-address'
 ]
 
 
@@ -94,6 +98,21 @@ def _clean_kernel_cmdline(item):
     return cleaned
 
 
+def _clean_network(item):
+    if len(item) < 4:
+        return item
+    elif item[0] != "network":
+        return item
+    # Examples:
+    # ["network", "eth0", "ipv4", "10.64.0.207"]
+    # Assume common network, otherwise also need to filter ipv4-netmask,
+    # ipv4-cidr etc.
+    field = item[2]
+    if field in ["ipv4"]:
+        return None
+    return item
+
+
 def _clean_temperatures(item):
     # Strip out temperatures e.g from ssacli for HP servers:
     # (u'disk', u'1I:1:2', u'maximum_temperature_c', u'27'),
@@ -132,6 +151,7 @@ def _modify(item):
         _clean_kernel_cmdline,
         _clean_temperatures,
         _clean_boot_volume,
+        _clean_network,
         _clean_generic_field
     ]
     for step in steps:
