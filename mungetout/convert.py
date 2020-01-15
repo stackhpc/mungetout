@@ -139,6 +139,17 @@ def _clean_boot_volume(item):
     return item[0], item[1], item[2], match.group(1)
 
 
+def _clean_ipmi_sensor_data(item):
+    # This removes voltages, fan speeds, temperatures, power consumption e.g:
+    # ["ipmi", "Power Meter", "value", "84"]
+    if len(item) < 4:
+        return item
+    elif item[0] != "ipmi":
+        return item
+    elif item[2] != "value":
+        return item
+
+
 def _clean_generic_field(item):
     if len(item) < 4 or item[2] not in _field_blacklist:
         return item
