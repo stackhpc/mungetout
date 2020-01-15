@@ -234,7 +234,7 @@ def clean(extrahw, clean_benchmarks=False):
             _clean_generic_field
         ]
         if clean_benchmarks:
-            steps += _clean_benchmarks
+            steps.append(_clean_benchmarks)
         for step in steps:
             item = step(item)
             # A step may return None to remove the value
