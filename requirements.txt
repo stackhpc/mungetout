@@ -5,4 +5,6 @@ python-openstackclient
 python-ironicclient
 requests
 python-ironic-inspector-client
+deepdiff<=3.3.0; python_version < '3.0'
+deepdiff; python_version >= '3.0'
 
