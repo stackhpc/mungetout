@@ -14,6 +14,7 @@ import sys
 import os
 import re
 import requests
+import random
 import shlex
 from subprocess import Popen, PIPE
 
@@ -65,6 +66,20 @@ def parse_args(args):
         type=int,
         help="Limit the number of nodes processed",
         default=None)
+    parser.add_argument(
+        '--seed',
+        dest='seed',
+        metavar="SEED",
+        nargs='?',
+        type=int,
+        help="Seed for the random number generator",
+        default=None)
+    parser.add_argument(
+        '--shuffle',
+        dest="shuffle",
+        help="Randomize nodes. Useful for sampling with limit.",
+        action='store_true',
+        default=False)
     parser.add_argument(
         '-v',
         '--verbose',
@@ -132,6 +147,11 @@ def main(args):
     skipped = 0
     i = 0
     nodes = _get_nodes()
+    if args.seed:
+        _logger.info("Using seed: {}".format(args.seed))
+        random.seed(args.seed)
+    if args.shuffle:
+        random.shuffle(nodes)
     os.mkdir("results")
     for i, node in enumerate(nodes):
         if args.limit and i - skipped >= args.limit:
