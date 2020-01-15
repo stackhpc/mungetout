@@ -204,11 +204,11 @@ def parse_args(args):
         action='store_const',
         const=logging.DEBUG)
     parser.add_argument(
-        '--clean-benchmarks',
-        dest="clean_benchmarks",
+        '--filter-benchmarks',
+        dest="filter_benchmarks",
         default=False,
         action='store_true',
-        help='Strip benchmarks from extra data')
+        help='Filter benchmarks from extra data')
     parser.add_argument(
         '--output-format',
         dest="output_format",
@@ -231,7 +231,7 @@ def setup_logging(loglevel):
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
-def clean(extrahw, clean_benchmarks=False):
+def clean(extrahw, filter_benchmarks=False):
     def _modify(item):
         steps = [
             _clean_kernel_cmdline,
@@ -241,7 +241,7 @@ def clean(extrahw, clean_benchmarks=False):
             _clean_ipmi_sensor_data,
             _clean_generic_field
         ]
-        if clean_benchmarks:
+        if filter_benchmarks:
             steps.append(_clean_benchmarks)
         for step in steps:
             item = step(item)
@@ -263,7 +263,7 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     data = json.load(sys.stdin)
-    result = clean(data, clean_benchmarks=args.clean_benchmarks)
+    result = clean(data, filter_benchmarks=args.filter_benchmarks)
     if args.output_format == "eval":
         print(result)
     else:
