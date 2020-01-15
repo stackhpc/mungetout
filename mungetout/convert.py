@@ -43,6 +43,8 @@ _field_blacklist = [
     'ip-address',
     # ["ipmi", "lan", "mac-address", "80:c1:6e:77:71:8c"]
     'mac-address',
+    # ["cpu", "physical_0", "current_Mhz", 2700.224]
+    'current_Mhz',
 ]
 
 _benchmark_regexps = [
