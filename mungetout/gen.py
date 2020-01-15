@@ -185,6 +185,7 @@ def main(args):
         extra_data = _get_extra_hardware_data(node_uuid,
                                               url=args.inspection_store)
         extra_path = os.path.join(node_name, 'extra_hardware')
+
         with open(extra_path, 'w') as f:
             cmd = 'cardiff-convert --output-format eval'
             process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
@@ -193,6 +194,9 @@ def main(args):
         alt_path = os.path.join('results',
                                 'extra_hardware_{}'.format(node_name))
         os.symlink(os.path.join('..', extra_path), alt_path)
+
+        with open("%s.json" % extra_path, 'w') as f:
+            json.dump(extra_data, f, indent=4, separators=(',', ': '))
 
     _logger.info("Processed {} nodes".format(i))
     _logger.info("Skipped {} nodes".format(skipped))
