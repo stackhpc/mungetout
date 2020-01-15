@@ -278,7 +278,7 @@ def clean(extrahw, filter_benchmarks=False):
         return item
     # modify then strip falsy values, operates on python data structure
     tuples = filter(lambda x: x, [_modify(tuple(xs)) for xs in extrahw])
-    return list(tuples)
+    return sorted(list(tuples))
 
 
 def main(args):
