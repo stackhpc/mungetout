@@ -102,7 +102,7 @@ def _clean_boot_volume(item):
             ["primary_boot_volume", "secondary_boot_volume"]:
         return item
     # Only keep "logicaldrive NUM" component
-    match = re.search("^(logicaldrive [0-9]+) \(.*?\)", item[3])
+    match = re.search(r"^(logicaldrive [0-9]+) \(.*?\)", item[3])
     if not match:
         return item
     return item[0], item[1], item[2], match.group(1)
