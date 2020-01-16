@@ -38,6 +38,12 @@ def parse_args(args):
         help='File to diff'
     )
     parser.add_argument(
+        '--filter-unique-fields',
+        dest="unique",
+        help="EXPERIMENTAL: Only compare fields that appear in both",
+        action='store_true',
+        default=False)
+    parser.add_argument(
         '-v',
         '--verbose',
         dest="loglevel",
@@ -76,6 +82,15 @@ def main(args):
     with open(args.file[0]) as f1, open(args.file[1]) as f2:
         c1 = convert.clean(json.load(f1), filter_benchmarks=True)
         c2 = convert.clean(json.load(f2), filter_benchmarks=True)
+        if args.unique:
+            # x[1] element can be a disk or cpu id, x[3] is the value, so
+            # only compare x[0] and x[2]. That way a difference in the
+            # number of cpus or disks will still be shown.
+            c1_keys = {(x[0], x[2]) for x in c1}
+            c2_keys = {(x[0], x[2]) for x in c2}
+            common_keys = c1_keys.intersection(c2_keys)
+            c1 = [x for x in c1 if (x[0], x[2]) in common_keys]
+            c2 = [x for x in c2 if (x[0], x[2]) in common_keys]
         ddiff = DeepDiff(c1, c2, ignore_order=True)
         pprint(ddiff, indent=2)
 
