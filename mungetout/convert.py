@@ -21,7 +21,7 @@ __license__ = "apache"
 _logger = logging.getLogger(__name__)
 
 
-_field_blacklist = [
+_cardiff_blacklist = [
     # (u'hpa', u'slot_0', u'total_cache_memory_available', u'0.3')
     'total_cache_memory_available',
     # Strip out serial numbers e.g from ssacli for HP servers:
@@ -35,8 +35,6 @@ _field_blacklist = [
     'wwn-id',
     # ["disk", "sda", "scsi-id", "scsi-1234"]
     'scsi-id',
-    # ["system", "product", "serial", "CZHITHERE"]
-    'serial',
     # ["system", "product", "uuid", "e21c3ea6-4215-40e6-99db-cf48569f1e59"]
     'uuid',
     # ["ipmi", "lan", "ip-address", "10.64.3.2"]
@@ -45,6 +43,11 @@ _field_blacklist = [
     'mac-address',
     # ["cpu", "physical_0", "current_Mhz", 2700.224]
     'current_Mhz',
+]
+
+_serial_blacklist = [
+    # ["system", "product", "serial", "CZHITHERE"]
+    'serial',
 ]
 
 _benchmark_regexps = [
@@ -165,9 +168,16 @@ def _filter_ipmi_sensor_data(item):
 
 
 def _filter_generic_field(item):
-    if len(item) < 4 or item[2] not in _field_blacklist:
+    if len(item) < 4 or item[2] not in _cardiff_blacklist:
         return item
     logging.debug("_filter_generic_field removing: {}".format(item))
+    return None
+
+
+def _filter_serials(item):
+    if len(item) < 4 or item[2] not in _serial_blacklist:
+        return item
+    logging.debug("_filter_serials removing: {}".format(item))
     return None
 
 
@@ -235,6 +245,12 @@ def parse_args(args):
         action='store_true',
         help='Filter benchmarks from extra data')
     parser.add_argument(
+        '--filter-serials',
+        dest="filter_serials",
+        default=False,
+        action='store_true',
+        help='Filter serial numbers')
+    parser.add_argument(
         '--output-format',
         dest="output_format",
         choices=['json', 'eval'],
@@ -256,7 +272,7 @@ def setup_logging(loglevel):
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
-def clean(extrahw, filter_benchmarks=False):
+def clean(extrahw, filter_benchmarks=False, filter_serials=False):
     def _modify(item):
         steps = [
             _clean_kernel_cmdline,
@@ -268,6 +284,8 @@ def clean(extrahw, filter_benchmarks=False):
             _filter_ipmi_sensor_data,
             _filter_generic_field,
         ]
+        if filter_serials:
+            steps.append(_filter_serials)
         if filter_benchmarks:
             steps.append(_filter_benchmarks)
         for step in steps:
@@ -290,7 +308,8 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     data = json.load(sys.stdin)
-    result = clean(data, filter_benchmarks=args.filter_benchmarks)
+    result = clean(data, filter_benchmarks=args.filter_benchmarks,
+                   filter_serials=args.filter_serials)
     if args.output_format == "eval":
         print(result)
     else:

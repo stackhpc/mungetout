@@ -80,8 +80,10 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     with open(args.file[0]) as f1, open(args.file[1]) as f2:
-        c1 = convert.clean(json.load(f1), filter_benchmarks=True)
-        c2 = convert.clean(json.load(f2), filter_benchmarks=True)
+        c1 = convert.clean(json.load(f1), filter_benchmarks=True,
+                           filter_serials=True)
+        c2 = convert.clean(json.load(f2), filter_benchmarks=True,
+                           filter_serials=True)
         if args.unique:
             # x[1] element can be a disk or cpu id, x[3] is the value, so
             # only compare x[0] and x[2]. That way a difference in the
