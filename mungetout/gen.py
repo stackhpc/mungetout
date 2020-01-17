@@ -198,6 +198,12 @@ def main(args):
         with open("%s.json" % extra_path, 'w') as f:
             json.dump(extra_data, f, indent=4, separators=(',', ': '))
 
+        with open("%s.filtered.json" % extra_path, 'w') as f:
+            cmd = 'cardiff-convert --filter-benchmarks --filter-serials'
+            process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
+                            stderr=PIPE)
+            process.communicate(input=json.dumps(extra_data))
+
     _logger.info("Processed {} nodes".format(i))
     _logger.info("Skipped {} nodes".format(skipped))
 
