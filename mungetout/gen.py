@@ -26,6 +26,8 @@ __license__ = "apache"
 
 _logger = logging.getLogger(__name__)
 
+nodes = []
+
 
 def parse_args(args):
     """Parse command line parameters
@@ -113,6 +115,8 @@ def setup_logging(loglevel):
 
 
 def _get_nodes():
+    if nodes:
+        return nodes
     cmd = "openstack baremetal node list -f json -c UUID -c Name"
     output = subprocess.check_output(shlex.split(cmd))
     return json.loads(output)
@@ -142,6 +146,11 @@ def main(args):
     """
     args = parse_args(args)
     setup_logging(args.loglevel)
+
+    # Use stdin for the node list if available
+    if not sys.stdin.isatty():
+        nodes = json.load(sys.stdin)
+
     if args.limit:
         _logger.info("Using limit: {}".format(args.limit))
     skipped = 0
