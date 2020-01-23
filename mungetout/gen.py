@@ -149,6 +149,7 @@ def main(args):
 
     # Use stdin for the node list if available
     if not sys.stdin.isatty():
+        global nodes
         nodes = json.load(sys.stdin)
 
     if args.limit:
