@@ -12,7 +12,9 @@ import json
 import subprocess
 import sys
 import os
+import re
 import requests
+import random
 import shlex
 from subprocess import Popen, PIPE
 
@@ -50,6 +52,13 @@ def parse_args(args):
         default="http://localhost:8080/ironic-inspector",
         help="URL to download extra hardware data from")
     parser.add_argument(
+        '--regex',
+        dest='regex',
+        metavar="REGEX",
+        nargs='?',
+        default="",
+        help="Select nodes using a regex")
+    parser.add_argument(
         '--limit',
         dest='limit',
         metavar="MAX",
@@ -57,6 +66,20 @@ def parse_args(args):
         type=int,
         help="Limit the number of nodes processed",
         default=None)
+    parser.add_argument(
+        '--seed',
+        dest='seed',
+        metavar="SEED",
+        nargs='?',
+        type=int,
+        help="Seed for the random number generator",
+        default=None)
+    parser.add_argument(
+        '--shuffle',
+        dest="shuffle",
+        help="Randomize nodes. Useful for sampling with limit.",
+        action='store_true',
+        default=False)
     parser.add_argument(
         '-v',
         '--verbose',
@@ -124,6 +147,11 @@ def main(args):
     skipped = 0
     i = 0
     nodes = _get_nodes()
+    if args.seed:
+        _logger.info("Using seed: {}".format(args.seed))
+        random.seed(args.seed)
+    if args.shuffle:
+        random.shuffle(nodes)
     os.mkdir("results")
     for i, node in enumerate(nodes):
         if args.limit and i - skipped >= args.limit:
@@ -137,6 +165,13 @@ def main(args):
                             .format(node_uuid))
             skipped += 1
             continue
+
+        if args.regex and not re.search(args.regex, node_name):
+            _logger.debug("Node with name: {} doesn't match regex"
+                          .format(node_name))
+            skipped += 1
+            continue
+
         os.mkdir(node_name)
 
         introspection_data = _get_introspection_data(node_uuid)
@@ -150,13 +185,24 @@ def main(args):
         extra_data = _get_extra_hardware_data(node_uuid,
                                               url=args.inspection_store)
         extra_path = os.path.join(node_name, 'extra_hardware')
+
         with open(extra_path, 'w') as f:
-            process = Popen(['cardiff-convert'], stdout=f, stdin=PIPE,
+            cmd = 'cardiff-convert --output-format eval'
+            process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
                             stderr=PIPE)
             process.communicate(input=json.dumps(extra_data))
         alt_path = os.path.join('results',
                                 'extra_hardware_{}'.format(node_name))
         os.symlink(os.path.join('..', extra_path), alt_path)
+
+        with open("%s.json" % extra_path, 'w') as f:
+            json.dump(extra_data, f, indent=4, separators=(',', ': '))
+
+        with open("%s.filtered.json" % extra_path, 'w') as f:
+            cmd = 'cardiff-convert --filter-benchmarks --filter-serials'
+            process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
+                            stderr=PIPE)
+            process.communicate(input=json.dumps(extra_data))
 
     _logger.info("Processed {} nodes".format(i))
     _logger.info("Skipped {} nodes".format(skipped))

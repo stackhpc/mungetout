@@ -21,13 +21,44 @@ __license__ = "apache"
 _logger = logging.getLogger(__name__)
 
 
-_field_blacklist = [
+_cardiff_blacklist = [
     # (u'hpa', u'slot_0', u'total_cache_memory_available', u'0.3')
     'total_cache_memory_available',
     # Strip out serial numbers e.g from ssacli for HP servers:
     #  (u'disk', u'1I:1:2', u'wwid', u'1234567'),
-    'wwid'
+    'wwid',
+    # ['hpa', 'slot_0', 'serial_number', '1234']
+    'serial_number',
+    # ['hpa', 'slot_0', 'host_serial_number', '1234']
+    'host_serial_number',
+    # ["disk", "sda", "wwn-id", "wwn-0xdeadbeef"]
+    'wwn-id',
+    # ["disk", "sda", "scsi-id", "scsi-1234"]
+    'scsi-id',
+    # ["system", "product", "uuid", "e21c3ea6-4215-40e6-99db-cf48569f1e59"]
+    'uuid',
+    # ["ipmi", "lan", "ip-address", "10.64.3.2"]
+    'ip-address',
+    # ["ipmi", "lan", "mac-address", "80:c1:6e:77:71:8c"]
+    'mac-address',
+    # ["cpu", "physical_0", "current_Mhz", 2700.224]
+    'current_Mhz',
 ]
+
+_serial_blacklist = [
+    # ["system", "product", "serial", "CZHITHERE"]
+    'serial',
+]
+
+_benchmark_regexps = [
+    # Match threaded_bandwidth_2G, bandwidth_2G
+    "^.*bandwidth_.*$",
+    "^loops_per_sec$",
+    "^bogomips$"
+]
+
+_benchmark_regex_fmt = "|".join(["(%s)" for _ in _benchmark_regexps])
+_benchmark_regex = re.compile(_benchmark_regex_fmt % tuple(_benchmark_regexps))
 
 
 def _parse_cmdline_param(p):
@@ -79,17 +110,32 @@ def _clean_kernel_cmdline(item):
     _use_placeholder(cmdline, "ip")
     cleaned = _dict2cmdline(cmdline)
     logging.debug("After _clean_kernel_cmdline: {}".format(cleaned))
-    return cleaned
+    return item[0], item[1], item[2], cleaned
 
 
-def _clean_temperatures(item):
+def _filter_network(item):
+    if len(item) < 4:
+        return item
+    elif item[0] != "network":
+        return item
+    # Examples:
+    # ["network", "eth0", "ipv4", "10.64.0.207"]
+    # Assume common network, otherwise also need to filter ipv4-netmask,
+    # ipv4-cidr etc.
+    field = item[2]
+    if field not in ["ipv4"]:
+        return item
+    logging.debug("_filter_network removing: {}".format(item))
+
+
+def _filter_temperatures(item):
     # Strip out temperatures e.g from ssacli for HP servers:
     # (u'disk', u'1I:1:2', u'maximum_temperature_c', u'27'),
     # (u'disk', u'1I:1:2', u'current_temperature_c', u'18'),
     # (u'hpa', u'slot_0', u'capacitor_temperature_c', u'12'),
     if len(item) < 4 or "temperature" not in item[2]:
         return item
-    logging.debug("_clean_temperatures, removing: {}".format(item))
+    logging.debug("_filter_temperatures, removing: {}".format(item))
     return None
 
 
@@ -105,29 +151,61 @@ def _clean_boot_volume(item):
     match = re.search(r"^(logicaldrive [0-9]+) \(.*?\)", item[3])
     if not match:
         return item
+    logging.debug("_clean_boot_volume cleaning: {}".format(item))
     return item[0], item[1], item[2], match.group(1)
 
 
-def _clean_generic_field(item):
-    if len(item) < 4 or item[2] not in _field_blacklist:
+def _filter_ipmi_sensor_data(item):
+    # This removes voltages, fan speeds, temperatures, power consumption e.g:
+    # ["ipmi", "Power Meter", "value", "84"]
+    if len(item) < 4:
         return item
-    logging.debug("_clean_generic field removing: {}".format(item))
+    elif item[0] != "ipmi":
+        return item
+    elif item[2] != "value":
+        return item
+    logging.debug("_filter_ipmi_sensor_data removing: {}".format(item))
+
+
+def _filter_generic_field(item):
+    if len(item) < 4 or item[2] not in _cardiff_blacklist:
+        return item
+    logging.debug("_filter_generic_field removing: {}".format(item))
     return None
 
 
-def _modify(item):
-    steps = [
-        _clean_kernel_cmdline,
-        _clean_temperatures,
-        _clean_boot_volume,
-        _clean_generic_field
-    ]
-    for step in steps:
-        item = step(item)
-        # A step may return None to remove the value
-        if not item:
-            break
-    return item
+def _filter_serials(item):
+    if len(item) < 4 or item[2] not in _serial_blacklist:
+        return item
+    logging.debug("_filter_serials removing: {}".format(item))
+    return None
+
+
+def _filter_benchmarks(item):
+    if len(item) < 4 or not _benchmark_regex.match(item[2]):
+        return item
+    logging.debug("_filter_benchmarks removing: {}".format(item))
+    return None
+
+
+def _filter_memory(item):
+    # If the memory is placed in different memory banks, but the same amount
+    # of memory exists for each CPU this can cause grouping to fail.
+    # E.g:
+    # ["memory", "bank:10", "description",
+    #  "DIMM DDR3 Synchronous Registered (Buffered) 1600 MHz (0.6 ns)"]
+    # You could probably do some sort of fuzzy match, but for now keep it
+    # simple and remove the values
+    if len(item) < 4 or item[0] != "memory" or "bank" not in item[1]:
+        return item
+    logging.debug("_filter_memory removing: {}".format(item))
+
+
+def _filter_memory_ipmi(item):
+    # Needs filtering if memory in different banks, see _filter_memory
+    if len(item) < 4 or item[0] != "ipmi" or "dimm" not in item[1].lower():
+        return item
+    logging.debug("_filter_memory removing: {}".format(item))
 
 
 def parse_args(args):
@@ -160,6 +238,26 @@ def parse_args(args):
         help="set loglevel to DEBUG",
         action='store_const',
         const=logging.DEBUG)
+    parser.add_argument(
+        '--filter-benchmarks',
+        dest="filter_benchmarks",
+        default=False,
+        action='store_true',
+        help='Filter benchmarks from extra data')
+    parser.add_argument(
+        '--filter-serials',
+        dest="filter_serials",
+        default=False,
+        action='store_true',
+        help='Filter serial numbers')
+    parser.add_argument(
+        '--output-format',
+        dest="output_format",
+        choices=['json', 'eval'],
+        nargs="?",
+        default="json",
+        help='Format to print the data as. eval will print a python evaluable '
+             'string')
     return parser.parse_args(args)
 
 
@@ -174,6 +272,33 @@ def setup_logging(loglevel):
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
+def clean(extrahw, filter_benchmarks=False, filter_serials=False):
+    def _modify(item):
+        steps = [
+            _clean_kernel_cmdline,
+            _filter_temperatures,
+            _clean_boot_volume,
+            _filter_memory,
+            _filter_memory_ipmi,
+            _filter_network,
+            _filter_ipmi_sensor_data,
+            _filter_generic_field,
+        ]
+        if filter_serials:
+            steps.append(_filter_serials)
+        if filter_benchmarks:
+            steps.append(_filter_benchmarks)
+        for step in steps:
+            item = step(item)
+            # A step may return None to remove the value
+            if not item:
+                break
+        return item
+    # modify then strip falsy values, operates on python data structure
+    tuples = filter(lambda x: x, [_modify(tuple(xs)) for xs in extrahw])
+    return sorted(list(tuples))
+
+
 def main(args):
     """Main entry point allowing external calls
 
@@ -183,9 +308,12 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     data = json.load(sys.stdin)
-    # modify then strip falsy values
-    tuples = filter(lambda x: x, [_modify(tuple(xs)) for xs in data])
-    print(list(tuples))
+    result = clean(data, filter_benchmarks=args.filter_benchmarks,
+                   filter_serials=args.filter_serials)
+    if args.output_format == "eval":
+        print(result)
+    else:
+        json.dump(result, sys.stdout, indent=4, separators=(',', ': '))
 
 
 def run():
