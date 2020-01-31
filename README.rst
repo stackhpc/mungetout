@@ -19,14 +19,14 @@ package to be installed.
 
   pip install git+https://github.com/stackhpc/mungetout
   mkdir working-dir && cd working-dir
-  cardiff-gen
+  m2-gen
   hardware-cardiff -I ipmi -p 'results/extra_hardware_kef1i-a00*'
 
 It can be useful to limit the number of nodes for debugging purposes:
 
 .. code-block::
 
-  cardiff-gen --limit 4 -vv
+  m2-gen --limit 4 -vv
 
 Note
 ====

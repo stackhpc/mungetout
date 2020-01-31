@@ -17,7 +17,7 @@ __license__ = "apache"
 def test_e2e():
     with open('samples/raw', 'r') as instream:
         output = subprocess.check_output(
-            ['cardiff-convert'], stdin=instream
+            ['m2-convert'], stdin=instream
         )
         assert output != ""
         # cardiff loads this output using eval

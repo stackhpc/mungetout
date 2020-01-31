@@ -197,7 +197,7 @@ def main(args):
         extra_path = os.path.join(node_name, 'extra_hardware')
 
         with open(extra_path, 'w') as f:
-            cmd = 'cardiff-convert --output-format eval'
+            cmd = 'm2-convert --output-format eval'
             process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
                             stderr=PIPE)
             process.communicate(input=json.dumps(extra_data))
@@ -209,7 +209,7 @@ def main(args):
             json.dump(extra_data, f, indent=4, separators=(',', ': '))
 
         with open("%s.filtered.json" % extra_path, 'w') as f:
-            cmd = 'cardiff-convert --filter-benchmarks --filter-serials'
+            cmd = 'm2-convert --filter-benchmarks --filter-serials'
             process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
                             stderr=PIPE)
             process.communicate(input=json.dumps(extra_data))
