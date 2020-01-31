@@ -52,7 +52,7 @@ class CmdSink(object):
 def main():
     try:
         data = json.load(sys.stdin)
-    except Exception as e:
+    except Exception:
         data = []
         for line in sys.stdin:
             print(line)
