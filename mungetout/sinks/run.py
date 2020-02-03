@@ -48,9 +48,9 @@ class CmdSink(object):
                 return
             rendered.append(render)
         _logger.info("Running: {}".format(rendered))
-        with Popen(rendered, stdout=sys.stdout, stderr=sys.stderr,
-                   shell=False) as process:
-            process.communicate()
+        process = Popen(rendered, stdout=sys.stdout, stderr=sys.stderr,
+                        shell=False)
+        process.communicate()
 
 
 def main():
