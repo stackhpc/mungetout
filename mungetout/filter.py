@@ -10,7 +10,7 @@ def main():
     nodes_out = []
     line = sys.argv[1]
     start_ip, end_ip = line.split('-')
-    encoding = sys.stdout.encoding
+    encoding = sys.stdout.encoding or "UTF-8"
     for node in nodes_in:
         if "ipmi_address" not in node["Driver Info"]:
             print("Skipping node: %s" % node["UUID"], file=sys.stderr)
