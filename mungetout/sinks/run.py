@@ -43,19 +43,23 @@ class CmdSink(object):
         for part in self.cmd:
             tmpl = Template(part)
             render = tmpl.render(item=item)
+            if not render:
+                _logger.info("Skipping, template failed to render: %s" % part)
+                return
             rendered.append(render)
         _logger.info("Running: {}".format(rendered))
-        with Popen(rendered, stdout=sys.stdout, stderr=sys.stderr) as process:
+        with Popen(rendered, stdout=sys.stdout, stderr=sys.stderr,
+                   shell=False) as process:
             process.communicate()
 
 
 def main():
+    stdin = sys.stdin.readlines()
     try:
-        data = json.load(sys.stdin)
+        data = json.loads("\n".join(stdin))
     except Exception:
         data = []
-        for line in sys.stdin:
-            print(line)
+        for line in stdin:
             data.append(json.loads(line))
 
     sink = CmdSink(sys.argv[1:])
