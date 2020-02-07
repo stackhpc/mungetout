@@ -28,6 +28,30 @@ It can be useful to limit the number of nodes for debugging purposes:
 
   m2-gen --limit 4 -vv
 
+Examples
+========
+
+Running a script on some Ironic nodes:
+
+.. code-block::
+
+  openstack baremetal node list -f json --long | m2-filter 192.168.0.1-192.168.0.54 | m2-sink-run ./onboard.sh '{{ item.UUID }}'
+
+List node names:
+
+.. code-block::
+
+  openstack baremetal node list -f json --long | m2-filter 192.168.0.1-192.168.0.6 | jq -r '.[] | ."Name"' | sort
+
+Rename nodes:
+
+.. code-block::
+
+  cat asset-map
+  "node1","192.168.0.1"
+  "node2","192.168.0.2"
+  openstack baremetal node list -f json --long | m2-filter 192.168.0.1-192.168.0.2 | m2-sink-ironic-name asset-map
+
 Note
 ====
 
