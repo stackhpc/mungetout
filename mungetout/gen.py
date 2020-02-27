@@ -54,6 +54,13 @@ def parse_args(args):
         default="http://localhost:8080/ironic-inspector",
         help="URL to download extra hardware data from")
     parser.add_argument(
+        '--inspector-cloud',
+        dest='inspector_cloud',
+        metavar="CLOUD",
+        nargs='?',
+        default="",
+        help="Cloud to use for introspection data")
+    parser.add_argument(
         '--regex',
         dest='regex',
         metavar="REGEX",
@@ -122,9 +129,12 @@ def _get_nodes():
     return json.loads(output)
 
 
-def _get_introspection_data(uuid):
+def _get_introspection_data(uuid, cloud=None):
+    env = dict(os.environ)
+    if cloud:
+        env = dict(os.environ, OS_CLOUD=cloud)
     cmd = "openstack baremetal introspection data save {}".format(uuid)
-    output = subprocess.check_output(shlex.split(cmd))
+    output = subprocess.check_output(shlex.split(cmd), env=env)
     return json.loads(output)
 
 
@@ -184,7 +194,7 @@ def main(args):
 
         os.mkdir(node_name)
 
-        introspection_data = _get_introspection_data(node_uuid)
+        introspection_data = _get_introspection_data(node_uuid, cloud=args.inspector_cloud)
         introspection_path = os.path.join(node_name, 'introspection_data.json')
         with open(introspection_path, 'w') as f:
             json.dump(introspection_data, f, indent=4, sort_keys=True)
