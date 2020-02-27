@@ -54,6 +54,12 @@ def parse_args(args):
         default="http://localhost:8080/ironic-inspector",
         help="URL to download extra hardware data from")
     parser.add_argument(
+        '--skip-extra-hardware',
+        dest="skip_extra_hardware",
+        help="Do not collect extra hardware data",
+        action='store_true',
+        default=False)
+    parser.add_argument(
         '--inspector-cloud',
         dest='inspector_cloud',
         metavar="CLOUD",
@@ -202,27 +208,28 @@ def main(args):
                                 'introspection_data_{}'.format(node_name))
         os.symlink(os.path.join('..', introspection_path), alt_path)
 
-        extra_data = _get_extra_hardware_data(node_uuid,
-                                              url=args.inspection_store)
-        extra_path = os.path.join(node_name, 'extra_hardware')
+        if not args.skip_extra_hardware:
+            extra_data = _get_extra_hardware_data(node_uuid,
+                                                url=args.inspection_store)
+            extra_path = os.path.join(node_name, 'extra_hardware')
 
-        with open(extra_path, 'w') as f:
-            cmd = 'm2-convert --output-format eval'
-            process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
-                            stderr=PIPE)
-            process.communicate(input=json.dumps(extra_data))
-        alt_path = os.path.join('results',
-                                'extra_hardware_{}'.format(node_name))
-        os.symlink(os.path.join('..', extra_path), alt_path)
+            with open(extra_path, 'w') as f:
+                cmd = 'm2-convert --output-format eval'
+                process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
+                                stderr=PIPE)
+                process.communicate(input=json.dumps(extra_data))
+            alt_path = os.path.join('results',
+                                    'extra_hardware_{}'.format(node_name))
+            os.symlink(os.path.join('..', extra_path), alt_path)
 
-        with open("%s.json" % extra_path, 'w') as f:
-            json.dump(extra_data, f, indent=4, separators=(',', ': '))
+            with open("%s.json" % extra_path, 'w') as f:
+                json.dump(extra_data, f, indent=4, separators=(',', ': '))
 
-        with open("%s.filtered.json" % extra_path, 'w') as f:
-            cmd = 'm2-convert --filter-benchmarks --filter-serials'
-            process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
-                            stderr=PIPE)
-            process.communicate(input=json.dumps(extra_data))
+            with open("%s.filtered.json" % extra_path, 'w') as f:
+                cmd = 'm2-convert --filter-benchmarks --filter-serials'
+                process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
+                                stderr=PIPE)
+                process.communicate(input=json.dumps(extra_data))
 
     _logger.info("Processed {} nodes".format(i))
     _logger.info("Skipped {} nodes".format(skipped))
