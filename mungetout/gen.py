@@ -200,7 +200,8 @@ def main(args):
 
         os.mkdir(node_name)
 
-        introspection_data = _get_introspection_data(node_uuid, cloud=args.inspector_cloud)
+        introspection_data = _get_introspection_data(
+            node_uuid, cloud=args.inspector_cloud)
         introspection_path = os.path.join(node_name, 'introspection_data.json')
         with open(introspection_path, 'w') as f:
             json.dump(introspection_data, f, indent=4, sort_keys=True)
@@ -210,7 +211,7 @@ def main(args):
 
         if not args.skip_extra_hardware:
             extra_data = _get_extra_hardware_data(node_uuid,
-                                                url=args.inspection_store)
+                                                  url=args.inspection_store)
             extra_path = os.path.join(node_name, 'extra_hardware')
 
             with open(extra_path, 'w') as f:
