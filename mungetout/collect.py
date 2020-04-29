@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Generates a directory tree containing extra hardware data suitable
-for ingest by cardiff
+Collects Ironic introspection data
 """
 from __future__ import division, print_function, absolute_import
 
@@ -13,10 +12,8 @@ import subprocess
 import sys
 import os
 import re
-import requests
 import random
 import shlex
-from subprocess import Popen, PIPE
 
 from mungetout import __version__
 
@@ -46,19 +43,6 @@ def parse_args(args):
         '--version',
         action='version',
         version='mungetout {ver}'.format(ver=__version__))
-    parser.add_argument(
-        '--inspection-store-url',
-        dest='inspection_store',
-        metavar="URL",
-        nargs='?',
-        default="http://localhost:8080/ironic-inspector",
-        help="URL to download extra hardware data from")
-    parser.add_argument(
-        '--skip-extra-hardware',
-        dest="skip_extra_hardware",
-        help="Do not collect extra hardware data",
-        action='store_true',
-        default=False)
     parser.add_argument(
         '--inspector-cloud',
         dest='inspector_cloud',
@@ -144,16 +128,6 @@ def _get_introspection_data(uuid, cloud=None):
     return json.loads(output)
 
 
-def _get_extra_hardware_data(uuid, url):
-    url = "{url}/extra_hardware-{node_uuid}".format(node_uuid=uuid, url=url)
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-    except requests.HTTPError:
-        raise DownloadException("Invalid status code")
-    return response.json()
-
-
 def main(args):
     """Main entry point allowing external calls
 
@@ -178,7 +152,9 @@ def main(args):
         random.seed(args.seed)
     if args.shuffle:
         random.shuffle(nodes)
-    os.mkdir("results")
+
+    os.mkdir("introspection-data")
+
     for i, node in enumerate(nodes):
         if args.limit and i - skipped >= args.limit:
             skipped += len(nodes) - i
@@ -198,39 +174,12 @@ def main(args):
             skipped += 1
             continue
 
-        os.mkdir(node_name)
-
         introspection_data = _get_introspection_data(
             node_uuid, cloud=args.inspector_cloud)
-        introspection_path = os.path.join(node_name, 'introspection_data.json')
+        introspection_path = os.path.join(
+            "introspection-data", '%s.json' % node_name)
         with open(introspection_path, 'w') as f:
             json.dump(introspection_data, f, indent=4, sort_keys=True)
-        alt_path = os.path.join('results',
-                                'introspection_data_{}'.format(node_name))
-        os.symlink(os.path.join('..', introspection_path), alt_path)
-
-        if not args.skip_extra_hardware:
-            extra_data = _get_extra_hardware_data(node_uuid,
-                                                  url=args.inspection_store)
-            extra_path = os.path.join(node_name, 'extra_hardware')
-
-            with open(extra_path, 'w') as f:
-                cmd = 'm2-convert --output-format eval'
-                process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
-                                stderr=PIPE)
-                process.communicate(input=json.dumps(extra_data))
-            alt_path = os.path.join('results',
-                                    'extra_hardware_{}'.format(node_name))
-            os.symlink(os.path.join('..', extra_path), alt_path)
-
-            with open("%s.json" % extra_path, 'w') as f:
-                json.dump(extra_data, f, indent=4, separators=(',', ': '))
-
-            with open("%s.filtered.json" % extra_path, 'w') as f:
-                cmd = 'm2-convert --filter-benchmarks --filter-serials'
-                process = Popen(shlex.split(cmd), stdout=f, stdin=PIPE,
-                                stderr=PIPE)
-                process.communicate(input=json.dumps(extra_data))
 
     _logger.info("Processed {} nodes".format(i))
     _logger.info("Skipped {} nodes".format(skipped))

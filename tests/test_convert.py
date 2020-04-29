@@ -1,8 +1,8 @@
 import unittest
 
-from mungetout.convert import _clean_boot_volume # noqa
-from mungetout.convert import _filter_benchmarks # noqa
-from mungetout.convert import _filter_generic_field # noqa
+from mungetout.process import _clean_boot_volume # noqa
+from mungetout.process import _filter_benchmarks # noqa
+from mungetout.process import _filter_generic_field # noqa
 
 
 class FilterTests(unittest.TestCase):
